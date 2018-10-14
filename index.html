@@ -1,13 +1,44 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Ilms</title>
+		<title>Ilm's</title>
 		<meta charset="utf-8">
+		<link rel="stylesheet" type="text/css" href="site.css">
+		<script id="search-json"></script>
 	</head>
-	
 	<body>
-		<div id="slide">
-			WIP
+		<div id="slide-wrapper" style="display: none;">
+			<div id="slide">
+				<img id="current-image" />
+			</div>
+			<div id="slide-controls">
+				<button id="prev-button" ></button>
+				<button id="menu-button" ></button>
+				<a id="source-button" ></a>
+				<button id="next-button"></button>
+			</div>
 		</div>
+		<div id="cache" style="display: none;">
+			<img id="next-image-0" />
+			<img id="next-image-1" />
+			<img id="next-image-2" />
+			<img id="next-image-3" />
+			<img id="next-image-4" />
+			<img id="next-image-5" />
+			<img id="next-image-6" />
+			<img id="next-image-7" />
+			<img id="next-image-8" />
+			<img id="next-image-9" />
+		</div>
+		<div id="menu">
+			<div id="search">
+				<input id="host-text" type="search" /><br>
+				<input id="search-text" type="search" /><br>
+				<button id="search-button">Search</button>
+				<button id="view-button">Slides</button>
+			</div>
+		</div>
+		<script src="site.js"></script>
 	</body>
 </html>
+
