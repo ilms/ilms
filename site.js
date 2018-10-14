@@ -1,16 +1,17 @@
-var host = "";
 var tags = "";
-var pageLimit = 100;
+var validExtensions = new Set(['png','jpg','gif']);
+var pageLimit = 50;
 var slideIndex = 0;
 var downloadingPage = 1;
-var jsonData = JSON.parse('{}');
-var fallbackJson = JSON.parse('{"id":546281,"tags":"2014 4_fingers anthro black_nose blue_eyes blue_fur canine computer cute dog doing_it_wrong english_text fur glue green_background green_fur hi_res humor husky image_macro lol_comments male mammal meme multicolored_fur nekohaiku nude playful profanity reaction_image screwdriver simple_background sitting smile solo table tailtippedfennec text tools watermark white_fur wire yellow_fur","locked_tags":null,"description":"A meme piece that i got of my sona from the tailtippedfennec","created_at":{"json_class":"Time","s":1413420945,"n":322813000},"creator_id":48206,"author":"nekohaiku","change":11694694,"source":"http://www.furaffinity.net/user/nekohaiku/","score":546,"fav_count":1293,"md5":"900e98af5b512ba1a5f8a1a9885c1ef1","file_size":190487,"file_url":"https://static1.e621.net/data/90/0e/900e98af5b512ba1a5f8a1a9885c1ef1.jpg","file_ext":"jpg","preview_url":"https://static1.e621.net/data/preview/90/0e/900e98af5b512ba1a5f8a1a9885c1ef1.jpg","preview_width":112,"preview_height":150,"sample_url":"https://static1.e621.net/data/sample/90/0e/900e98af5b512ba1a5f8a1a9885c1ef1.jpg","sample_width":600,"sample_height":800,"rating":"s","status":"active","width":960,"height":1280,"has_comments":true,"has_notes":false,"has_children":false,"children":"","parent_id":null,"artist":["tailtippedfennec"],"sources":["http://www.furaffinity.net/user/nekohaiku/","http://www.furaffinity.net/view/14623039/","https://d.facdn.net/art/nekohaiku/1411684352.nekohaiku_1410248255.nekohaiku_neko__1__by_playful_foxe-d7yh5oj.jpg"]}');
+var downloading = false;
+var jsonData = [];
+var fallbackJson = JSON.parse('{"id":0,"file_url":"loading.png"}');
 function search() {
-	host = document.getElementById('host-text').value;
+	downloading = true;
 	tags = document.getElementById('search-text').value;
 	downloadingPage = 1;
-	jsonData = JSON.parse('{}');
-	var url = 'https://' + host + '/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=searchFinish';
+	jsonData = [];
+	var url = 'https://e621.net/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=searchFinish';
 	
 	var oldScript = document.getElementById("search-json");
 	oldScript.parentNode.removeChild(oldScript);
@@ -21,14 +22,16 @@ function search() {
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
 function searchFinish( data ) {
-	jsonData[downloadingPage] = data;
+	parseJson(data);
+	downloading = false;
 	slideIndex = 0;
 	updateSlide();
 	closeMenu();
 }
-function downloadJson(page) {
-	downloadingPage = page;
-	var url = 'https://' + host + '/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=downloadFinish';
+function downloadNextJson() {
+	downloading = true;
+	downloadingPage++;
+	var url = 'https://e621.net/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=downloadFinish';
 	
 	var oldScript = document.getElementById("search-json");
 	oldScript.parentNode.removeChild(oldScript);
@@ -39,22 +42,44 @@ function downloadJson(page) {
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
 function downloadFinish( data ) {
-	jsonData[downloadingPage] = data;
+	parseJson(data);
+	downloading = false;
+	updateSlide();
 }
 function getJson(index) {
-	var post = index % pageLimit;
-	var page = ((index - post) / pageLimit) + 1;
-	if (jsonData.hasOwnProperty(page)) {
-		return jsonData[page][post];
+	if (index < 0) {
+		return fallbackJson;
+	}
+	if (index < jsonData.length) {
+		return jsonData[index];
 	} else {
-		downloadJson(page);
+		if (!downloading)
+			downloadNextJson();
 		return fallbackJson;
 	}
 }
+function parseJson(data) {
+	var start = jsonData.length;
+	var i = 0,
+	    j = 0;
+	while (j < data.length) {
+		if (validExtensions.has(data[j]['file_ext'])) {
+			jsonData[start + i] = data[j];
+			i++;
+		}
+		j++;
+	}
+}
 function updateSlide() {
-	document.getElementById('current-image').setAttribute("src", getJson(slideIndex).file_url);
-	document.getElementById('source-button').setAttribute("href", 'https://' + host + '/post/show/' + getJson(slideIndex)['id']);
-	preload();
+	var crrentSlide = document.getElementById('current-image');
+	//crrentSlide.removeAttribute("src");
+	crrentSlide.classList.remove("loaded");
+	crrentSlide.onload = function () {
+        document.getElementById('current-image').classList.add('loaded');       
+    };
+	crrentSlide.setAttribute("src", getJson(slideIndex).file_url);
+	document.getElementById('source-button').setAttribute("href", 'https://e621.net/post/show/' + getJson(slideIndex)['id']);
+	updateCache();
 }
 function nextSlide() {
 	slideIndex += 1;
@@ -77,12 +102,30 @@ function closeMenu() {
 	menu.style.display = "none";
 	var slides = document.getElementById("slide-wrapper");
 	slides.style.display = "block";
+	setTimeout(() => {
+		var controls = document.getElementById("slide-controls");
+		controls.classList.add('hide');
+	}, 1500);
 }
-function preload() {
-	for (var i = 0; i < 10; i++)
-		document.getElementById('next-image-'+i).setAttribute("src", getJson(slideIndex + i + 1).file_url);
+function updateCache() {
+	var cache = document.getElementById("cache");
+	while (cache.firstChild) {
+		cache.removeChild(cache.firstChild);
+	}
+	for (var i = 0; i < 20; i++) {
+		var img = document.createElement('img');
+		img.setAttribute("src", getJson(slideIndex + i + 1).file_url);
+		cache.appendChild(img);
+	}
+	for (var i = 0; i < 10; i++) {
+		var json = getJson(slideIndex - i - 1);
+		if (json != 0) {
+			var img = document.createElement('img');
+			img.setAttribute("src", json.file_url);
+			cache.appendChild(img);
+		}
+	}
 }
-
 document.getElementById('search-button').addEventListener('click', function () {
     search();
 });
@@ -97,4 +140,28 @@ document.getElementById('prev-button').addEventListener('click', function () {
 });
 document.getElementById('menu-button').addEventListener('click', function () {
     openMenu();
+});
+var LEFT_ARROW_KEY_ID = 37;
+var RIGHT_ARROW_KEY_ID = 39;
+var A_KEY_ID = 65;
+var D_KEY_ID = 68;
+document.addEventListener('keydown', function (e) {
+	var key = e.which || e.keyCode;
+	
+	if (!(
+		key == LEFT_ARROW_KEY_ID ||
+		key == RIGHT_ARROW_KEY_ID ||
+		key == A_KEY_ID ||
+		key == D_KEY_ID))
+	{
+		return;
+	}
+    
+	if (document.activeElement !== document.getElementById('search-text')) {
+
+		if (key == LEFT_ARROW_KEY_ID || key == A_KEY_ID)
+			prevSlide();
+		if (key == RIGHT_ARROW_KEY_ID || key == D_KEY_ID)
+			nextSlide();
+	}
 });
