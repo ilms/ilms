@@ -152,7 +152,8 @@ function loadWatch(index, wTag) {
 function loadAllWatches() {
 	console.log(getCookie("watchCount"));
 	var watchCount = parseInt(getCookie("watchCount"));
-	if (watchCount !== NaN) {
+	console.log(watchCount);
+	if (watchCount == NaN) {
 		setCookie("watchCount", 0, 366);
 		return;
 	}
