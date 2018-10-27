@@ -1,6 +1,9 @@
 * {
 	margin: 0;
 }
+div {
+	color: #dddddd;
+}
 body {
 	background: #111111;
 }
@@ -90,4 +93,46 @@ a:active, a:focus {
 	width: 400px;
 	height: 30px;
 	margin: 20px auto 0 auto;
+}
+#watchlist-warning {
+	margin: 10px auto 10px auto;
+}
+#watchlist {
+	width: 400px;
+	margin: 20px auto 20px auto;
+}
+.watch {
+	height: 40px;
+	width: 400px;
+	padding: 10px 0 10px 0;
+}
+.watch-alert {
+	display: block;
+	float: left;
+	position: relative;
+	background-color: #8c4600;
+	padding: 5px;
+	border-radius: 5px;
+}
+.watch-text {
+	width: auto;
+	display: block;
+	position: relative;
+	padding: 5px;
+	overflow: hidden;
+	white-space: nowrap;
+}
+.watch-go {
+	display: block;
+	float: right;
+	position: relative;
+	padding: 5px;
+	overflow: hidden;
+}
+.watch-remove {
+	display: block;
+	float: right;
+	position: relative;
+	padding: 5px;
+	overflow: hidden;
 }
