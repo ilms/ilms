@@ -325,4 +325,4 @@ document.addEventListener('keydown', function (e) {
 
 // -----------
 
-loadAllWatches();
+//loadAllWatches();
