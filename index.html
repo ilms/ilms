@@ -1,11 +1,10 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Ilm's Inkbunny</title>
+		<title>Ilm's</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no">
 		<link rel="stylesheet" type="text/css" href="site.css">
-		<script id="login-json"></script>
 		<script id="search-json"></script>
 	</head>
 	<body>
@@ -14,28 +13,27 @@
 				<img id="current-image" />
 			</div>
 			<div id="slide-controls">
-				<button id="up-button" >Previous Image</button>
-				<button id="prev-button" >Previous Sub</button>
+				<button id="prev-button" >Previous</button>
 				<button id="menu-button" >Menu</button>
 				<a id="source-button" target="_blank">Link</a>
-				<button id="down-button">Next Image</button>
-				<button id="next-button">Next Sub</button>
+				<button id="next-button">Next</button>
 			</div>
 		</div>
 		<div id="cache" style="display: none;">
 		</div>
 		<div id="menu">
-			<div id="login">
-				<input id="login-username" type="username" /><br>
-				<input id="login-password" type="password" /><br>
-				<button id="login-button">Login</button>
-				<button id="login-guest-button">Guest Login</button>
-			</div>
-			<div id="search" style="display: none;">
+			<div id="search">
 				<input id="search-text" type="search" /><br>
 				<button id="search-button">Search</button>
-				<button id="favorites-button">Favorites</button>
 				<button id="view-button">Slides</button>
+			</div>
+			<div id="watchlist" style="display: none;">
+				<div id="watchlist-warning">This feature uses cookies</div>
+				<input id="add-watch-text" type="search" />
+				<button id="add-watch-button">Watch</button>
+				<button id="reset-watch-button">Reset</button>
+				<div id="watches">
+				</div>
 			</div>
 		</div>
 		<script src="site.js"></script>

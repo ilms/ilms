@@ -1,91 +1,41 @@
-var validTypes = '1,2,3,4,13,14';
+var tags = "";
+var validExtensions = new Set(['png','jpg','gif']);
+var pageLimit = 50;
 var slideIndex = 0;
-var fileIndex = 0;
 var downloadingPage = 1;
 var downloading = false;
+var currentWatchIDs = [];
 var jsonData = [];
-var fallbackJson = JSON.parse('{"submission_id":0,"files":[]}');
-var sid = "";
-var userID = 0;
-var rid = "";
-function guestLogin() {
-	var url = 'https://inkbunny.net/api_login.php?username=guest&callback=loginCallback';
-
-	var oldScript = document.getElementById("login-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "login-json");
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
+var fallbackJson = JSON.parse('{"id":0,"file_url":"loading.png"}');
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
-function login() {
-	var username = document.getElementById('login-username').value;
-	var password = document.getElementById('login-password').value;
-	var url = 'https://inkbunny.net/api_login.php?username='+username+'&password='+password+'&callback=loginCallback';
-
-	var oldScript = document.getElementById("login-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "login-json");
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
-}
-function loginCallback( data ) {
-	var oldScript = document.getElementById("login-json");
-	oldScript.parentNode.removeChild(oldScript);
-
-	if ('error_code' in data) {
-		document.getElementById('login-username').value = "";
-		document.getElementById('login-password').value = "";
-		return;
-	}
-
-	sid = data['sid'];
-	userID = data['user_id'];
-
-	console.log(data);
-
-	var login = document.getElementById("login");
-	login.style.display = "none";
-	var search = document.getElementById("search");
-	search.style.display = "block";
-}
-function searchFavorites() {
-	downloading = true;
-	downloadingPage = 1;
-	jsonData = [];
-	var url = 'https://inkbunny.net/api_search.php?sid='+sid+'&favs_user_id='+userID+'&get_rid=yes&callback=getSubmissionDetails';
-	
-	var oldScript = document.getElementById("search-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "search-json");
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
 }
 function search() {
 	downloading = true;
-	var text = document.getElementById('search-text').value;
+	tags = document.getElementById('search-text').value;
+	if (tags == "")
+		return;
 	downloadingPage = 1;
 	jsonData = [];
-	var url = 'https://inkbunny.net/api_search.php?sid='+sid+'&text='+text+'&get_rid=yes&callback=getSubmissionDetails';
+	var url = 'https://e621.net/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=searchFinish';
 	
-	var oldScript = document.getElementById("search-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "search-json");
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
-}
-function getSubmissionDetails( data ) {
-	var submission_ids = getSubmissionIDs(data);
-	rid = data['rid']
-	var url = 'https://inkbunny.net/api_submissions.php?sid='+sid+'&submission_ids='+submission_ids+'&callback=searchFinish';
-
 	var oldScript = document.getElementById("search-json");
 	oldScript.parentNode.removeChild(oldScript);
 	
@@ -101,35 +51,11 @@ function searchFinish( data ) {
 	updateSlide();
 	closeMenu();
 }
-function getSubmissionIDs( data ) {
-	var submission_ids = '';
-	for (var i = 0; i < data['submissions'].length; i++)
-	{
-		if (i > 0)
-		{
-			submission_ids += ',';
-		}
-		submission_ids += data['submissions'][i]['submission_id'];
-	}
-	return submission_ids;
-}
 function downloadNextJson() {
 	downloading = true;
 	downloadingPage++;
-	var url = 'https://inkbunny.net/api_search.php?sid=' + sid + '&page=' + downloadingPage + '&rid=' + rid + '&callback=getDownloadSubmissionDetails';
+	var url = 'https://e621.net/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=downloadFinish';
 	
-	var oldScript = document.getElementById("search-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "search-json");
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
-}
-function getDownloadSubmissionDetails( data ) {
-	var submission_ids = getSubmissionIDs(data);
-	var url = 'https://inkbunny.net/api_submissions.php?sid='+sid+'&submission_ids='+submission_ids+'&callback=downloadFinish';
-
 	var oldScript = document.getElementById("search-json");
 	oldScript.parentNode.removeChild(oldScript);
 	
@@ -142,6 +68,128 @@ function downloadFinish( data ) {
 	parseJson(data);
 	downloading = false;
 	updateSlide();
+}
+function downloadWatchJson(index) {
+	var wTag = getCookie("watchTag"+index);
+	var callback = "downloadWatchFinish" + index;
+	var url = 'https://e621.net/post/index.json?tags=' + wTag + '&page=1&limit=320&callback=' + callback;
+	var script = document.createElement('script');
+	script.setAttribute("id", "watch-json-"+index);
+	script.src = url;
+	document.getElementsByTagName('head')[0].appendChild(script);
+	window[callback] = function (data) {
+		var wLast = getCookie("watchLast"+index);
+		var wCurrent = getCookie("watchCurrent"+index);
+		var i = 0,
+			j = 0;
+		while (j < data.length) {
+			if (validExtensions.has(data[j]['file_ext'])) {
+				if (i == 0)
+					currentWatchIDs[index] = data[j]['id'];
+				if (data[j]['id'] == wLast) {
+					updateWatch(index, i)
+					return;
+				}
+				i++;
+			}
+			j++;
+		}
+		updateWatch(index, "" + i + "+")
+	};
+}
+function updateWatch(index, alertCount) {
+	var watch = document.getElementById('watch-'+index);
+	for (var i = 0; i < watch.childNodes.length; i++) {
+		if (watch.childNodes[i].className == "watch-alert") {
+			var wAlert = watch.childNodes[i];
+			wAlert.innerHTML = alertCount;
+			break;
+		}
+	}
+}
+function addNewWatch(){
+	var wTag = document.getElementById('add-watch-text').value;
+	if (wTag == "")
+		return;
+	var watchCount = parseInt(getCookie("watchCount"));
+	setCookie("watchTag"+watchCount, wTag, 366);
+	loadWatch(watchCount, getCookie("watchTag"+watchCount));
+	downloadWatchJson(watchCount);
+	watchCount += 1;
+	setCookie("watchCount", watchCount, 366);
+}
+function loadWatch(index, wTag) {
+	if (wTag == "")
+		return;
+	var watches = document.getElementById('watches');
+	var watch = document.createElement('div');
+	watch.classList.add('watch');
+	watch.setAttribute("id", "watch-"+index);
+	var wAlert = document.createElement('div');
+	wAlert.classList.add('watch-alert');
+	wAlert.innerHTML = "-";
+	watch.appendChild(wAlert);
+	var wRemove = document.createElement('button');
+	wRemove.classList.add('watch-remove');
+	wRemove.innerHTML = "X";
+	wRemove.addEventListener('click', function () {
+		watchRemove(index);
+	});
+	watch.appendChild(wRemove);
+	var wSearch = document.createElement('button');
+	wSearch.classList.add('watch-go');
+	wSearch.innerHTML = "Search";
+	wSearch.addEventListener('click', function () {
+		watchSearch(index);
+	});
+	watch.appendChild(wSearch);
+	var wText = document.createElement('div');
+	wText.classList.add('watch-text');
+	wText.innerHTML = wTag;
+	watch.appendChild(wText);
+	watches.appendChild(watch);
+}
+function loadAllWatches() {
+	console.log(getCookie("watchCount"));
+	var watchCount = parseInt(getCookie("watchCount"));
+	console.log(watchCount);
+	if (watchCount == NaN) {
+		setCookie("watchCount", 0, 366);
+		return;
+	}
+	for (var i = 0; i < watchCount; i++) {
+		var wTag = getCookie("watchTag"+i);
+		if (wTag == "")
+			continue;
+		loadWatch(i, wTag);
+		downloadWatchJson(i);
+	}
+}
+function watchSearch(index) {
+	setCookie("watchLast"+index, currentWatchIDs[index], 366);
+	document.getElementById('search-text').value = getCookie("watchTag"+index);
+	search();
+	updateWatch(index, 0);
+}
+function watchRemove(index) {
+	var watch = document.getElementById('watch-'+index);
+	watch.parentNode.removeChild(watch);
+	setCookie("watchLast"+index, "", 0);
+	setCookie("watchTag"+index, "", 0);
+}
+function resetWatches() {
+	var watchCount = parseInt(getCookie("watchCount"));
+	setCookie("watchCount", 0, 366);
+	var watches = document.getElementById('watches');
+	while (watches.firstChild) {
+		watches.removeChild(watches.firstChild);
+	}
+	for (var i = 0; i < watchCount; i++) {
+		setCookie("watchLast"+i, "", 0);
+		setCookie("watchTag"+i, "", 0);
+		var watch = document.getElementById('watch-json-'+i);
+		watch.parentNode.removeChild(watch);
+	}
 }
 function getJson(index) {
 	if (index < 0) {
@@ -159,61 +207,33 @@ function parseJson(data) {
 	var start = jsonData.length;
 	var i = 0,
 	    j = 0;
-	while (j < data['submissions'].length) {
-		if (true) { // Add manual blacklisting here
-			jsonData[start + i] = {
-				"submission_id": data['submissions'][j]['submission_id'],
-				"files": []
-			};
-			for (var f = 0; f < data['submissions'][j]['files'].length; f++) {
-				jsonData[start + i]['files'][f] = data['submissions'][j]['files'][f]['file_url_full'];
-			}
+	while (j < data.length) {
+		if (validExtensions.has(data[j]['file_ext'])) {
+			jsonData[start + i] = data[j];
 			i++;
 		}
 		j++;
 	}
 }
 function updateSlide() {
-	console.log(''+slideIndex+':'+fileIndex);
 	var crrentSlide = document.getElementById('current-image');
 	//crrentSlide.removeAttribute("src");
 	crrentSlide.classList.remove("loaded");
 	crrentSlide.onload = function () {
         document.getElementById('current-image').classList.add('loaded');       
     };
-	crrentSlide.setAttribute("src", getJson(slideIndex)['files'][fileIndex]);
-	document.getElementById('source-button').setAttribute("href", 'https://inkbunny.net/s/' + getJson(slideIndex)['submission_id']);
+	crrentSlide.setAttribute("src", getJson(slideIndex).file_url);
+	document.getElementById('source-button').setAttribute("href", 'https://e621.net/post/show/' + getJson(slideIndex)['id']);
 	updateCache();
 }
 function nextSlide() {
 	slideIndex += 1;
-	fileIndex = 0;
 	updateSlide();
 }
 function prevSlide() {
 	slideIndex -= 1;
-	fileIndex = 0;
 	if (slideIndex < 0)
 		slideIndex = 0;
-	updateSlide();
-}
-function maxFileIndex(slideIndex) {
-	return getJson(slideIndex)['files'].length - 1;
-}
-function nextFile() {
-	fileIndex += 1;
-	console.log(getJson(slideIndex));
-	var max = maxFileIndex(slideIndex);
-	if (fileIndex > max)
-	{
-		fileIndex = max;
-	}
-	updateSlide();
-}
-function prevFile() {
-	fileIndex -= 1;
-	if (fileIndex < 0)
-	fileIndex = 0;
 	updateSlide();
 }
 function openMenu() {
@@ -238,32 +258,19 @@ function updateCache() {
 		cache.removeChild(cache.firstChild);
 	}
 	for (var i = 0; i < 20; i++) {
-		var files = getJson(slideIndex + i + 1)['files'];
-		for (var j = 0; j < files.length; j++)
-		{
+		var img = document.createElement('img');
+		img.setAttribute("src", getJson(slideIndex + i + 1).file_url);
+		cache.appendChild(img);
+	}
+	for (var i = 0; i < 10; i++) {
+		var json = getJson(slideIndex - i - 1);
+		if (json != 0) {
 			var img = document.createElement('img');
-			img.setAttribute("src", files[j]);
+			img.setAttribute("src", json.file_url);
 			cache.appendChild(img);
 		}
 	}
-	for (var i = 0; i < 10; i++) {
-		var files = getJson(slideIndex - i - 1)['files'];
-		if (files != 0) {
-			for (var j = 0; j < files.length; j++)
-			{
-				var img = document.createElement('img');
-				img.setAttribute("src", files[j]);
-				cache.appendChild(img);
-			}
-		}
-	}
 }
-document.getElementById('login-button').addEventListener('click', function () {
-    login();
-});
-document.getElementById('login-guest-button').addEventListener('click', function () {
-    guestLogin();
-});
 document.getElementById('search-text').addEventListener("keyup", function(event) {
 	//event.preventDefault();
 	if (event.keyCode === 13) {
@@ -272,9 +279,6 @@ document.getElementById('search-text').addEventListener("keyup", function(event)
 });
 document.getElementById('search-button').addEventListener('click', function () {
     search();
-});
-document.getElementById('favorites-button').addEventListener('click', function () {
-    searchFavorites();
 });
 document.getElementById('view-button').addEventListener('click', function () {
     closeMenu();
@@ -285,14 +289,14 @@ document.getElementById('next-button').addEventListener('click', function () {
 document.getElementById('prev-button').addEventListener('click', function () {
     prevSlide();
 });
-document.getElementById('up-button').addEventListener('click', function () {
-    prevFile();
-});
-document.getElementById('down-button').addEventListener('click', function () {
-    nextFile();
-});
 document.getElementById('menu-button').addEventListener('click', function () {
     openMenu();
+});
+document.getElementById('add-watch-button').addEventListener('click', function () {
+    addNewWatch();
+});
+document.getElementById('reset-watch-button').addEventListener('click', function () {
+    resetWatches();
 });
 var LEFT_ARROW_KEY_ID = 37;
 var RIGHT_ARROW_KEY_ID = 39;
@@ -318,3 +322,7 @@ document.addEventListener('keydown', function (e) {
 			nextSlide();
 	}
 });
+
+// -----------
+
+//loadAllWatches();
