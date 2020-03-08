@@ -34,7 +34,7 @@ function search() {
 		return;
 	downloadingPage = 1;
 	jsonData = [];
-	var url = 'https://e621.net/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=searchFinish';
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=searchFinish';
 	
 	var oldScript = document.getElementById("search-json");
 	oldScript.parentNode.removeChild(oldScript);
@@ -54,7 +54,7 @@ function searchFinish( data ) {
 function downloadNextJson() {
 	downloading = true;
 	downloadingPage++;
-	var url = 'https://e621.net/post/index.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=downloadFinish';
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=downloadFinish';
 	
 	var oldScript = document.getElementById("search-json");
 	oldScript.parentNode.removeChild(oldScript);
@@ -72,7 +72,7 @@ function downloadFinish( data ) {
 function downloadWatchJson(index) {
 	var wTag = getCookie("watchTag"+index);
 	var callback = "downloadWatchFinish" + index;
-	var url = 'https://e621.net/post/index.json?tags=' + wTag + '&page=1&limit=320&callback=' + callback;
+	var url = 'https://e621.net/posts.json?tags=' + wTag + '&page=1&limit=320&callback=' + callback;
 	var script = document.createElement('script');
 	script.setAttribute("id", "watch-json-"+index);
 	script.src = url;
