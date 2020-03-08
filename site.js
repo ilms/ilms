@@ -46,7 +46,7 @@ function search() {
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
 function searchFinish( data ) {
-	parseJson(data);
+	parseJson(data['posts']);
 	downloading = false;
 	slideIndex = 0;
 	updateSlide();
@@ -67,7 +67,7 @@ function downloadNextJson() {
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
 function downloadFinish( data ) {
-	parseJson(data);
+	parseJson(data['posts']);
 	downloading = false;
 	updateSlide();
 }
