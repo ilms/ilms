@@ -41,7 +41,7 @@ function search() {
 	
 	var script = document.createElement('script');
 	script.setAttribute("id", "search-json");
-	script.type = 'application/javascript';
+	script.type = 'application/json';
 	script.src = url;
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
@@ -62,7 +62,7 @@ function downloadNextJson() {
 	
 	var script = document.createElement('script');
 	script.setAttribute("id", "search-json");
-	script.type = 'application/javascript';
+	script.type = 'application/json';
 	script.src = url;
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
@@ -77,7 +77,7 @@ function downloadWatchJson(index) {
 	var url = 'https://e621.net/posts.json?tags=' + wTag + '&page=1&limit=320&callback=' + callback;
 	var script = document.createElement('script');
 	script.setAttribute("id", "watch-json-"+index);
-	script.type = 'application/javascript';
+	script.type = 'application/json';
 	script.src = url;
 	document.getElementsByTagName('head')[0].appendChild(script);
 	window[callback] = function (data) {
