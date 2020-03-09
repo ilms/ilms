@@ -325,7 +325,17 @@ document.addEventListener('keydown', function (e) {
 			nextSlide();
 	}
 });
-
+$.ajaxSetup({
+  beforeSend: function(request) {
+    request.setRequestHeader("User-Agent","Ilm's e621/1.0");
+  }
+});
+$.ajax({
+	url: "https://e621.net/posts.json?tags=test&page=1&limit=50&callback=searchFinish",
+	success: function(result){
+		console.log(result);
+	}
+});
 // -----------
 
 //loadAllWatches();
