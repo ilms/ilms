@@ -4,9 +4,9 @@ var pageLimit = 50;
 var slideIndex = 0;
 var downloadingPage = 1;
 var downloading = false;
-var currentWatchIDs = [];
+var endOfDownload = false;
 var jsonData = [];
-var fallbackJson = JSON.parse('{"id":0,"file_url":"loading.png"}');
+var fallbackJson = JSON.parse('{"id":0,"file":{"url":"loading.png"}}');
 function setCookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
@@ -28,22 +28,16 @@ function getCookie(cname) {
     return "";
 }
 function search() {
+	endOfDownload = false;
 	downloading = true;
 	tags = document.getElementById('search-text').value;
 	if (tags == "")
 		return;
 	downloadingPage = 1;
 	jsonData = [];
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=searchFinish';
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';
 	
-	var oldScript = document.getElementById("search-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "search-json");
-	script.type = 'application/json';
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
+	makeRequest(url, searchFinish);
 }
 function searchFinish( data ) {
 	parseJson(data['posts']);
@@ -55,144 +49,14 @@ function searchFinish( data ) {
 function downloadNextJson() {
 	downloading = true;
 	downloadingPage++;
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&callback=downloadFinish';
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';
 	
-	var oldScript = document.getElementById("search-json");
-	oldScript.parentNode.removeChild(oldScript);
-	
-	var script = document.createElement('script');
-	script.setAttribute("id", "search-json");
-	script.type = 'application/json';
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
+	makeRequest(url, downloadFinish);
 }
 function downloadFinish( data ) {
 	parseJson(data['posts']);
 	downloading = false;
 	updateSlide();
-}
-function downloadWatchJson(index) {
-	var wTag = getCookie("watchTag"+index);
-	var callback = "downloadWatchFinish" + index;
-	var url = 'https://e621.net/posts.json?tags=' + wTag + '&page=1&limit=320&callback=' + callback;
-	var script = document.createElement('script');
-	script.setAttribute("id", "watch-json-"+index);
-	script.type = 'application/json';
-	script.src = url;
-	document.getElementsByTagName('head')[0].appendChild(script);
-	window[callback] = function (data) {
-		var wLast = getCookie("watchLast"+index);
-		var wCurrent = getCookie("watchCurrent"+index);
-		var i = 0,
-			j = 0;
-		while (j < data.length) {
-			if (validExtensions.has(data[j]['file_ext'])) {
-				if (i == 0)
-					currentWatchIDs[index] = data[j]['id'];
-				if (data[j]['id'] == wLast) {
-					updateWatch(index, i)
-					return;
-				}
-				i++;
-			}
-			j++;
-		}
-		updateWatch(index, "" + i + "+")
-	};
-}
-function updateWatch(index, alertCount) {
-	var watch = document.getElementById('watch-'+index);
-	for (var i = 0; i < watch.childNodes.length; i++) {
-		if (watch.childNodes[i].className == "watch-alert") {
-			var wAlert = watch.childNodes[i];
-			wAlert.innerHTML = alertCount;
-			break;
-		}
-	}
-}
-function addNewWatch(){
-	var wTag = document.getElementById('add-watch-text').value;
-	if (wTag == "")
-		return;
-	var watchCount = parseInt(getCookie("watchCount"));
-	setCookie("watchTag"+watchCount, wTag, 366);
-	loadWatch(watchCount, getCookie("watchTag"+watchCount));
-	downloadWatchJson(watchCount);
-	watchCount += 1;
-	setCookie("watchCount", watchCount, 366);
-}
-function loadWatch(index, wTag) {
-	if (wTag == "")
-		return;
-	var watches = document.getElementById('watches');
-	var watch = document.createElement('div');
-	watch.classList.add('watch');
-	watch.setAttribute("id", "watch-"+index);
-	var wAlert = document.createElement('div');
-	wAlert.classList.add('watch-alert');
-	wAlert.innerHTML = "-";
-	watch.appendChild(wAlert);
-	var wRemove = document.createElement('button');
-	wRemove.classList.add('watch-remove');
-	wRemove.innerHTML = "X";
-	wRemove.addEventListener('click', function () {
-		watchRemove(index);
-	});
-	watch.appendChild(wRemove);
-	var wSearch = document.createElement('button');
-	wSearch.classList.add('watch-go');
-	wSearch.innerHTML = "Search";
-	wSearch.addEventListener('click', function () {
-		watchSearch(index);
-	});
-	watch.appendChild(wSearch);
-	var wText = document.createElement('div');
-	wText.classList.add('watch-text');
-	wText.innerHTML = wTag;
-	watch.appendChild(wText);
-	watches.appendChild(watch);
-}
-function loadAllWatches() {
-	console.log(getCookie("watchCount"));
-	var watchCount = parseInt(getCookie("watchCount"));
-	console.log(watchCount);
-	if (watchCount == NaN) {
-		setCookie("watchCount", 0, 366);
-		return;
-	}
-	for (var i = 0; i < watchCount; i++) {
-		var wTag = getCookie("watchTag"+i);
-		if (wTag == "")
-			continue;
-		loadWatch(i, wTag);
-		downloadWatchJson(i);
-	}
-}
-function watchSearch(index) {
-	setCookie("watchLast"+index, currentWatchIDs[index], 366);
-	document.getElementById('search-text').value = getCookie("watchTag"+index);
-	search();
-	updateWatch(index, 0);
-}
-function watchRemove(index) {
-	var watch = document.getElementById('watch-'+index);
-	watch.parentNode.removeChild(watch);
-	setCookie("watchLast"+index, "", 0);
-	setCookie("watchTag"+index, "", 0);
-}
-function resetWatches() {
-	var watchCount = parseInt(getCookie("watchCount"));
-	setCookie("watchCount", 0, 366);
-	var watches = document.getElementById('watches');
-	while (watches.firstChild) {
-		watches.removeChild(watches.firstChild);
-	}
-	for (var i = 0; i < watchCount; i++) {
-		setCookie("watchLast"+i, "", 0);
-		setCookie("watchTag"+i, "", 0);
-		var watch = document.getElementById('watch-json-'+i);
-		watch.parentNode.removeChild(watch);
-	}
 }
 function getJson(index) {
 	if (index < 0) {
@@ -202,16 +66,22 @@ function getJson(index) {
 		return jsonData[index];
 	} else {
 		if (!downloading)
-			downloadNextJson();
+			if (!endOfDownload)
+				downloadNextJson();
 		return fallbackJson;
 	}
 }
 function parseJson(data) {
 	var start = jsonData.length;
+	if (data.length == 0)
+	{
+		endOfDownload = true;
+		return;
+	}
 	var i = 0,
 	    j = 0;
 	while (j < data.length) {
-		if (validExtensions.has(data[j]['file_ext'])) {
+		if (validExtensions.has(data[j]['file']['ext'])) {
 			jsonData[start + i] = data[j];
 			i++;
 		}
@@ -225,7 +95,7 @@ function updateSlide() {
 	crrentSlide.onload = function () {
         document.getElementById('current-image').classList.add('loaded');       
     };
-	crrentSlide.setAttribute("src", getJson(slideIndex).file_url);
+	crrentSlide.setAttribute("src", getJson(slideIndex).file.url);
 	document.getElementById('source-button').setAttribute("href", 'https://e621.net/post/show/' + getJson(slideIndex)['id']);
 	updateCache();
 }
@@ -262,14 +132,14 @@ function updateCache() {
 	}
 	for (var i = 0; i < 20; i++) {
 		var img = document.createElement('img');
-		img.setAttribute("src", getJson(slideIndex + i + 1).file_url);
+		img.setAttribute("src", getJson(slideIndex + i + 1).file.url);
 		cache.appendChild(img);
 	}
 	for (var i = 0; i < 10; i++) {
 		var json = getJson(slideIndex - i - 1);
 		if (json != 0) {
 			var img = document.createElement('img');
-			img.setAttribute("src", json.file_url);
+			img.setAttribute("src", json.file.url);
 			cache.appendChild(img);
 		}
 	}
@@ -295,12 +165,6 @@ document.getElementById('prev-button').addEventListener('click', function () {
 document.getElementById('menu-button').addEventListener('click', function () {
     openMenu();
 });
-document.getElementById('add-watch-button').addEventListener('click', function () {
-    addNewWatch();
-});
-document.getElementById('reset-watch-button').addEventListener('click', function () {
-    resetWatches();
-});
 var LEFT_ARROW_KEY_ID = 37;
 var RIGHT_ARROW_KEY_ID = 39;
 var A_KEY_ID = 65;
@@ -325,17 +189,14 @@ document.addEventListener('keydown', function (e) {
 			nextSlide();
 	}
 });
-$.ajaxSetup({
-  beforeSend: function(request) {
-    request.setRequestHeader("User-Agent","Ilm's e621/1.0");
-  }
-});
-$.ajax({
-	url: "https://e621.net/posts.json?tags=test&page=1&limit=50&callback=searchFinish",
-	success: function(result){
-		console.log(result);
-	}
-});
+function makeRequest(url, callback) {
+	$.ajax({
+		url: url,
+		crossDomain: true,
+		dataType: 'json',
+		success: callback
+	});
+}
+
 // -----------
 
-//loadAllWatches();
