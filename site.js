@@ -10,6 +10,9 @@ var fallbackJson = JSON.parse('{"id":0,"file":{"url":"loading.png"}}');
 function getLoginExtension() {
 	var username = window.localStorage.getItem('username');
 	var apiKey = window.localStorage.getItem('api_key');
+	console.log('reading');
+	console.log(username);
+	console.log(apiKey);
 	if (username !== null && apiKey !== null) {
 		return '&login=' + username + '&api_key=' + apiKey;
 	} else {
@@ -19,6 +22,9 @@ function getLoginExtension() {
 function saveLogin(username, apiKey) {
 	window.localStorage.setItem('username', username);
 	window.localStorage.setItem('api_key', apiKey);
+	console.log('writing');
+	console.log(username);
+	console.log(apiKey);
 }
 function search() {
 	endOfDownload = false;
