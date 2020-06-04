@@ -7,25 +7,18 @@ var downloading = false;
 var endOfDownload = false;
 var jsonData = [];
 var fallbackJson = JSON.parse('{"id":0,"file":{"url":"loading.png"}}');
-function setCookie(cname, cvalue, exdays) {
-    var d = new Date();
-    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-    var expires = "expires="+d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+function getLoginExtension() {
+	var username = window.localStorage.getItem('username');
+	var apiKey = window.localStorage.getItem('api_key');
+	if (username !== null && apiKey !== null) {
+		return '&login=' + username + '&api_key=' + apiKey;
+	} else {
+		return '';
+	}
 }
-function getCookie(cname) {
-    var name = cname + "=";
-    var ca = document.cookie.split(';');
-    for(var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
+function saveLogin(username, apiKey) {
+	window.localStorage.setItem('username', username);
+	window.localStorage.setItem('api_key', apiKey);
 }
 function search() {
 	endOfDownload = false;
@@ -35,7 +28,7 @@ function search() {
 		return;
 	downloadingPage = 1;
 	jsonData = [];
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0' + getLoginExtension();
 	
 	makeRequest(url, searchFinish);
 }
@@ -49,7 +42,7 @@ function searchFinish( data ) {
 function downloadNextJson() {
 	downloading = true;
 	downloadingPage++;
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0' + getLoginExtension();
 	
 	makeRequest(url, downloadFinish);
 }
@@ -164,6 +157,11 @@ document.getElementById('prev-button').addEventListener('click', function () {
 });
 document.getElementById('menu-button').addEventListener('click', function () {
     openMenu();
+});
+document.getElementById('save-login-button').addEventListener('click', function () {
+	var username = document.getElementById('username').value;
+	var apiKey = document.getElementById('api-key').value;
+    saveLogin(username, apiKey);
 });
 var LEFT_ARROW_KEY_ID = 37;
 var RIGHT_ARROW_KEY_ID = 39;
