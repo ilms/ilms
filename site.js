@@ -125,6 +125,7 @@ function closeMenu() {
 	}, 1500);
 }
 function updateCache() {
+	return; // TODO remove, temporary disabled cache
 	var cache = document.getElementById("cache");
 	while (cache.firstChild) {
 		cache.removeChild(cache.firstChild);
