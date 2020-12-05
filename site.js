@@ -231,9 +231,6 @@ function makeRequest(url, callback) {
 function makePostRequest(url, callback, formData) {
 	$.ajax({
 		method: 'POST',
-		headers: {
-			'Access-Control-Allow-Origin': 'https://ilms.github.io',
-		},
 		url: url,
 		data: formData,
 		crossDomain: true,
