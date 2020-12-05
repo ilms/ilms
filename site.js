@@ -97,6 +97,7 @@ function updateSlide() {
 	crrentSlide.setAttribute("src", getJson(slideIndex).file.url);
 	document.getElementById('source-button').setAttribute("href", 'https://e621.net/post/show/' + getJson(slideIndex)['id']);
 	document.getElementById('add-set-button').classList.remove('adding');
+	document.getElementById('add-set-button').classList.remove('added');
 	if (getJson(slideIndex)['id'] == 0) {
 		document.getElementById('add-set-button').classList.add('hide');
 	} else {
@@ -114,6 +115,7 @@ function addPostToSet() {
 	var fd = {'post_ids[]': getJson(slideIndex)['id']}
 	
 	makePostRequest(url, setFinish, fd);
+	document.getElementById('add-set-button').classList.remove('added');
 	document.getElementById('add-set-button').classList.add('adding');
 	document.getElementById('add-set-button').innerHTML = '🔃';
 }
