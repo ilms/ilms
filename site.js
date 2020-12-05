@@ -96,7 +96,31 @@ function updateSlide() {
     };
 	crrentSlide.setAttribute("src", getJson(slideIndex).file.url);
 	document.getElementById('source-button').setAttribute("href", 'https://e621.net/post/show/' + getJson(slideIndex)['id']);
+	document.getElementById('add-set-button').classList.remove('adding');
+	if (getJson(slideIndex)['id'] == 0) {
+		document.getElementById('add-set-button').classList.add('hide');
+	} else {
+		document.getElementById('add-set-button').classList.remove('hide');
+	}
+	document.getElementById('add-set-button').innerHTML = '➕';
 	updateCache();
+}
+function addPostToSet() {
+	var setID = 22987; // TODO add option for this
+	var url = 'https://e621.net/post_sets/' + setID + '/add_posts.json?_client=Ilm%27s%20e621%2F1.0' + getLoginExtension();
+	
+	//var fd = new FormData();
+	//fd.append( 'post_ids[]', getJson(slideIndex)['id'] );
+	var fd = {'post_ids[]': getJson(slideIndex)['id']}
+	
+	makePostRequest(url, setFinish, fd);
+	document.getElementById('add-set-button').classList.add('adding');
+	document.getElementById('add-set-button').innerHTML = '🔃';
+}
+function setFinish() {
+	document.getElementById('add-set-button').classList.remove('adding');
+	document.getElementById('add-set-button').classList.add('added');
+	document.getElementById('add-set-button').innerHTML = '☑️';
 }
 function nextSlide() {
 	slideIndex += 1;
@@ -164,6 +188,9 @@ document.getElementById('prev-button').addEventListener('click', function () {
 document.getElementById('menu-button').addEventListener('click', function () {
     openMenu();
 });
+document.getElementById('add-set-button').addEventListener('click', function () {
+    addPostToSet();
+});
 document.getElementById('save-login-button').addEventListener('click', function () {
 	var username = document.getElementById('username').value;
 	var apiKey = document.getElementById('api-key').value;
@@ -196,6 +223,19 @@ document.addEventListener('keydown', function (e) {
 function makeRequest(url, callback) {
 	$.ajax({
 		url: url,
+		crossDomain: true,
+		dataType: 'json',
+		success: callback
+	});
+}
+function makePostRequest(url, callback, formData) {
+	$.ajax({
+		method: 'POST',
+		headers: {
+			'Access-Control-Allow-Origin': 'http://127.0.0.1:8000',
+		},
+		url: url,
+		data: formData,
 		crossDomain: true,
 		dataType: 'json',
 		success: callback
