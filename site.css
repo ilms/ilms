@@ -16,7 +16,7 @@ a:active, a:focus {
 	width: 100vw;
 	height: 100vh;
 }
-#slide,#slide-controls {
+#slide,#slide-controls,#slide-controls-extra {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -32,6 +32,9 @@ a:active, a:focus {
 }
 #slide-controls.hide {
 	opacity: 0;
+}
+#slide-controls-extra {
+	pointer-events: none; 
 }
 #current-image {
 	position: absolute;
@@ -84,6 +87,31 @@ a:active, a:focus {
 	line-height: 47vh;
 	text-align: center;
 	box-sizing: border-box;
+}
+#add-set-button {
+	pointer-events: all;
+	display: block;
+	font-size: 30px;
+	color: #dddddd;
+	background-color: Transparent;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	width: min(15vw, 10vh);
+	height: min(15vw, 10vh);
+}
+#add-set-button.hide {
+	display: none;
+}
+#add-set-button:not(.added) {
+	opacity: 1;
+}
+#add-set-button.added {
+    transition: opacity 1s ease-out;
+    -moz-transition: opacity 1s ease-out;
+    -webkit-transition: opacity 1s ease-out;
+    -o-transition: opacity 1s ease-out;
+	opacity: 0;
 }
 #search {
 	width: 400px;
