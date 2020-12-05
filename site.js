@@ -232,7 +232,7 @@ function makePostRequest(url, callback, formData) {
 	$.ajax({
 		method: 'POST',
 		headers: {
-			'Access-Control-Allow-Origin': 'http://127.0.0.1:8000',
+			'Access-Control-Allow-Origin': 'https://ilms.github.io',
 		},
 		url: url,
 		data: formData,
