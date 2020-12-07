@@ -1,6 +1,12 @@
+// Constants
+let USER_AGENT = "Ilm's e621/1.0";
+let CACHE_PRELOAD_SIZE = 20;
+let CACHE_POSTLOAD_SIZE = 10;
+let PAGE_LIMIT = 50;
+let VALID_EXTENSIONS = new Set(['png','jpg','gif']);
+
+// Global Variables
 var tags = "";
-var validExtensions = new Set(['png','jpg','gif']);
-var pageLimit = 50;
 var slideIndex = 0;
 var downloadingPage = 1;
 var downloading = false;
@@ -13,12 +19,11 @@ var fallbackJson = JSON.parse('{"id":0,"file":{"url":"loading.png"}}');
 function saveLogin() {
 	var username = document.getElementById('username').value;
 	var apiKey = document.getElementById('api-key').value;
+	window.localStorage.setItem('username', username);
+	window.localStorage.setItem('api_key', apiKey);
+	// For future use
 	var auth = btoa(username + ':' + apiKey);
 	window.localStorage.setItem('authorization', auth);
-	console.log('Saving Auth');
-	console.log(username);
-	console.log(apiKey);
-	console.log(auth);
 }
 function getAuth() {
 	return window.localStorage.getItem('authorization');
@@ -27,13 +32,13 @@ function getAuthHeaders() {
 	var auth = getAuth();
 	return (auth !== null) ? {Authorization: 'Basic ' + auth} : {};
 }
-function getLoginExtension() {
+function getLoginParameters() {
 	var username = window.localStorage.getItem('username');
 	var apiKey = window.localStorage.getItem('api_key');
 	if (username !== null && apiKey !== null) {
-		return '&login=' + username + '&api_key=' + apiKey;
+		return {login: username, api_key: apiKey};
 	} else {
-		return '';
+		return {};
 	}
 }
 
@@ -46,9 +51,15 @@ function search() {
 		return;
 	downloadingPage = 1;
 	jsonData = [];
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';// + getLoginExtension();
 	
-	makeRequest(url, searchFinish);
+	var url = 'https://e621.net/posts.json';
+	var params = {
+		tags: tags,
+		page: downloadingPage,
+		limit: PAGE_LIMIT,
+	};
+	
+	makeRequest(url, params, searchFinish);
 }
 function searchFinish( data ) {
 	parseJson(data['posts']);
@@ -60,9 +71,15 @@ function searchFinish( data ) {
 function downloadNextJson() {
 	downloading = true;
 	downloadingPage++;
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';// + getLoginExtension();
 	
-	makeRequest(url, downloadFinish);
+	var url = 'https://e621.net/posts.json';
+	var params = {
+		tags: tags,
+		page: downloadingPage,
+		limit: PAGE_LIMIT,
+	};
+	
+	makeRequest(url, params, downloadFinish);
 }
 function downloadFinish( data ) {
 	parseJson(data['posts']);
@@ -92,13 +109,15 @@ function parseJson(data) {
 	var i = 0,
 	    j = 0;
 	while (j < data.length) {
-		if (validExtensions.has(data[j]['file']['ext'])) {
+		if (VALID_EXTENSIONS.has(data[j]['file']['ext'])) {
 			jsonData[start + i] = data[j];
 			i++;
 		}
 		j++;
 	}
 }
+
+// Current Slide
 function updateSlide() {
 	var crrentSlide = document.getElementById('current-image');
 	//crrentSlide.removeAttribute("src");
@@ -118,24 +137,8 @@ function updateSlide() {
 	document.getElementById('add-set-button').innerHTML = '➕';
 	updateCache();
 }
-function addPostToSet() {
-	var setID = 22987; // TODO add option for this
-	var url = 'https://e621.net/post_sets/' + setID + '/add_posts.json?_client=Ilm%27s%20e621%2F1.0' + getLoginExtension();
-	
-	//var fd = new FormData();
-	//fd.append( 'post_ids[]', getJson(slideIndex)['id'] );
-	var fd = {'post_ids[]': getJson(slideIndex)['id']}
-	
-	makePostRequest(url, setFinish, fd);
-	document.getElementById('add-set-button').classList.remove('added');
-	document.getElementById('add-set-button').classList.add('adding');
-	document.getElementById('add-set-button').innerHTML = '🔃';
-}
-function setFinish() {
-	document.getElementById('add-set-button').classList.remove('adding');
-	document.getElementById('add-set-button').classList.add('added');
-	document.getElementById('add-set-button').innerHTML = '☑️';
-}
+
+// Slide Controls
 function nextSlide() {
 	slideIndex += 1;
 	updateSlide();
@@ -146,6 +149,8 @@ function prevSlide() {
 		slideIndex = 0;
 	updateSlide();
 }
+
+// Menu Toggle Controls
 function openMenu() {
 	var slides = document.getElementById("slide-wrapper");
 	slides.style.display = "none";
@@ -162,17 +167,20 @@ function closeMenu() {
 		controls.classList.add('hide');
 	}, 1500);
 }
+
+// Image cache
+// This is used to pre-load upcoming and previous images
 function updateCache() {
 	var cache = document.getElementById("cache");
 	while (cache.firstChild) {
 		cache.removeChild(cache.firstChild);
 	}
-	for (var i = 0; i < 20; i++) {
+	for (var i = 0; i < CACHE_PRELOAD_SIZE; i++) {
 		var img = document.createElement('img');
 		img.setAttribute("src", getJson(slideIndex + i + 1).file.url);
 		cache.appendChild(img);
 	}
-	for (var i = 0; i < 10; i++) {
+	for (var i = 0; i < CACHE_POSTLOAD_SIZE; i++) {
 		var json = getJson(slideIndex - i - 1);
 		if (json != 0) {
 			var img = document.createElement('img');
@@ -186,8 +194,24 @@ function updateCache() {
 function fetchUserSets() {
 	
 }
+function addPostToSet() {
+	var setID = 22987; // TODO add option for this
+	var url = 'https://e621.net/post_sets/' + setID + '/add_posts.json';
+	
+	var fd = {'post_ids[]': getJson(slideIndex)['id']};
+	
+	makePostRequest(url, {}, fd, setFinish);
+	document.getElementById('add-set-button').classList.remove('added');
+	document.getElementById('add-set-button').classList.add('adding');
+	document.getElementById('add-set-button').innerHTML = '🔃';
+}
+function setFinish() {
+	document.getElementById('add-set-button').classList.remove('adding');
+	document.getElementById('add-set-button').classList.add('added');
+	document.getElementById('add-set-button').innerHTML = '☑️';
+}
 
-
+// Event Binding
 document.getElementById('search-text').addEventListener("keyup", function(event) {
 	//event.preventDefault();
 	if (event.keyCode === 13) {
@@ -217,6 +241,8 @@ document.getElementById('save-login-button').addEventListener('click', function 
 	var apiKey = document.getElementById('api-key').value;
     saveLogin(username, apiKey);
 });
+
+// Keybindings
 var LEFT_ARROW_KEY_ID = 37;
 var RIGHT_ARROW_KEY_ID = 39;
 var A_KEY_ID = 65;
@@ -241,26 +267,35 @@ document.addEventListener('keydown', function (e) {
 			nextSlide();
 	}
 });
-function makeRequest(url, callback) {
-	console.log(getAuthHeaders());
+
+// Requests / AJAX
+function getClientParamters() {
+	return {_client: USER_AGENT};
+}
+function toURLParams(baseParams) {
+	var clientParams = getClientParamters();
+	var authParams = getLoginParameters();
+	console.log(baseParams);
+	console.log(clientParams);
+	console.log(authParams);
+	var urlParams = new URLSearchParams({...baseParams, ...clientParams, ...authParams});
+	return '?' + urlParams.toString();
+}
+function makeRequest(url, parameters, callback) {
 	$.ajax({
-		url: url,
+		url: url + toURLParams(parameters),
 		crossDomain: true,
-		headers: getAuthHeaders(),
 		dataType: 'json',
 		success: callback
 	});
 }
-function makePostRequest(url, callback, formData) {
+function makePostRequest(url, parameters, formData, callback) {
 	$.ajax({
 		method: 'POST',
-		url: url,
+		url: url + toURLParams(parameters),
 		data: formData,
 		crossDomain: true,
 		dataType: 'json',
 		success: callback
 	});
 }
-
-// -----------
-
