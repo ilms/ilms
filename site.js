@@ -6,26 +6,38 @@ var downloadingPage = 1;
 var downloading = false;
 var endOfDownload = false;
 var jsonData = [];
+var sets = {"Owned": [], "Maintained": []};
 var fallbackJson = JSON.parse('{"id":0,"file":{"url":"loading.png"}}');
+
+// Authorization / Login
+function saveLogin() {
+	var username = document.getElementById('username').value;
+	var apiKey = document.getElementById('api-key').value;
+	var auth = btoa(username + ':' + apiKey);
+	window.localStorage.setItem('authorization', auth);
+	console.log('Saving Auth');
+	console.log(username);
+	console.log(apiKey);
+	console.log(auth);
+}
+function getAuth() {
+	return window.localStorage.getItem('authorization');
+}
+function getAuthHeaders() {
+	var auth = getAuth();
+	return (auth !== null) ? {Authorization: 'Basic ' + auth} : {};
+}
 function getLoginExtension() {
 	var username = window.localStorage.getItem('username');
 	var apiKey = window.localStorage.getItem('api_key');
-	console.log('reading');
-	console.log(username);
-	console.log(apiKey);
 	if (username !== null && apiKey !== null) {
 		return '&login=' + username + '&api_key=' + apiKey;
 	} else {
 		return '';
 	}
 }
-function saveLogin(username, apiKey) {
-	window.localStorage.setItem('username', username);
-	window.localStorage.setItem('api_key', apiKey);
-	console.log('writing');
-	console.log(username);
-	console.log(apiKey);
-}
+
+// Searching
 function search() {
 	endOfDownload = false;
 	downloading = true;
@@ -34,7 +46,7 @@ function search() {
 		return;
 	downloadingPage = 1;
 	jsonData = [];
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0' + getLoginExtension();
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';// + getLoginExtension();
 	
 	makeRequest(url, searchFinish);
 }
@@ -48,7 +60,7 @@ function searchFinish( data ) {
 function downloadNextJson() {
 	downloading = true;
 	downloadingPage++;
-	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0' + getLoginExtension();
+	var url = 'https://e621.net/posts.json?tags=' + tags + '&page=' + downloadingPage + '&limit=' + pageLimit + '&_client=Ilm%27s%20e621%2F1.0';// + getLoginExtension();
 	
 	makeRequest(url, downloadFinish);
 }
@@ -169,6 +181,13 @@ function updateCache() {
 		}
 	}
 }
+
+// Sets
+function fetchUserSets() {
+	
+}
+
+
 document.getElementById('search-text').addEventListener("keyup", function(event) {
 	//event.preventDefault();
 	if (event.keyCode === 13) {
@@ -223,9 +242,11 @@ document.addEventListener('keydown', function (e) {
 	}
 });
 function makeRequest(url, callback) {
+	console.log(getAuthHeaders());
 	$.ajax({
 		url: url,
 		crossDomain: true,
+		headers: getAuthHeaders(),
 		dataType: 'json',
 		success: callback
 	});
