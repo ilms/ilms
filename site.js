@@ -120,11 +120,11 @@ function parseJson(data) {
 // Current Slide
 function updateSlide() {
 	var crrentSlide = document.getElementById('current-image');
-	crrentSlide.removeAttribute("src");
 	crrentSlide.classList.remove("loaded");
 	crrentSlide.onload = function () {
         document.getElementById('current-image').classList.add('loaded');       
     };
+	crrentSlide.removeAttribute("src");
 	crrentSlide.setAttribute("src", getJson(slideIndex).file.url);
 	document.getElementById('source-button').setAttribute("href", 'https://e621.net/post/show/' + getJson(slideIndex)['id']);
 	document.getElementById('add-set-button').classList.remove('adding');
